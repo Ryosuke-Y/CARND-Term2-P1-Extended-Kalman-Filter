@@ -3,6 +3,10 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 KalmanFilter::KalmanFilter() {}
 
 KalmanFilter::~KalmanFilter() {}
@@ -58,16 +62,24 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
 	double vy = x_(3);
 
   double ro = sqrt(px*px + py*py);
+  double phi =  atan2(py,px);
+  double ro_dot;
+
+  while(phi < -M_PI) {
+      phi += 2 * M_PI;
+  }
+  while(phi > M_PI) {
+      phi -= 2 * M_PI;
+  }
+
+  if (fabs(ro) < 0.0001) {
+    ro_dot = 0;
+  } else {
+    ro_dot = (px*vx + py*vy)/ro;
+  }
 
   VectorXd z_pred(3);
-  double phi = 0.0; // make phi 0.0 if too small
-  if (fabs(px) > 0.001) {
-    phi = atan2(px, py);
-  }
-  double ro_dot = 0.0; // make ro_dot 0.0 if too small
-  if (fabs(ro) > 0.001) {
-    ro_dot = (px * vx + py * vy) / ro;
-  }
+  z_pred << ro, phi, ro_dot;
 
   //adjust phi in y to be between -pi and pi
   VectorXd y = z - z_pred;
@@ -82,4 +94,5 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   long x_size = x_.size();
   MatrixXd I = MatrixXd::Identity(x_size, x_size);
   P_ = (I - K * H_) * P_;
+
 }
