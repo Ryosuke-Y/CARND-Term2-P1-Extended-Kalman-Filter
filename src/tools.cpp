@@ -21,14 +21,13 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   // check the validity of the following inputs:
   //  * the estimation vector size should not be zero
   //  * the estimation vector size should equal ground truth vector size
-  if (estimations.size() != ground_truth.size()
-      || estimations.size() == 0){
+  if (estimations.size() != ground_truth.size() || estimations.size() == 0){
       std::cout << "Invalid estimation or ground_truth data" << std::endl;
       return rmse;
   }
 
   //accumulate squared residuals
-  for (unsigned int i = 0; i < estimations.size(); ++i){
+  for (int i = 0; i < estimations.size(); ++i){
 
       VectorXd residual = estimations[i] - ground_truth[i];
 
