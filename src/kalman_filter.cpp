@@ -1,11 +1,11 @@
 #include "kalman_filter.h"
+#include <iostream>
+#include "tools.h"
+#include <math.h>
+#include <stdio.h>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
-
-#ifndef M_PI
-#define M_PI (3.14159265358979323846)
-#endif
 
 KalmanFilter::KalmanFilter() {}
 
@@ -56,33 +56,40 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   TODO:
     * update the state by using Extended Kalman Filter equations
   */
+  VectorXd h_x(3);
+  //recover state parameters
   double px = x_(0);
-	double py = x_(1);
-	double vx = x_(2);
-	double vy = x_(3);
+  double py = x_(1);
+  double vx = x_(2);
+  double vy = x_(3);
 
-  double ro = sqrt(px*px + py*py);
-  double phi =  atan2(py,px);
-  double ro_dot;
+  //pre-compute a set of terms to avoid repeated calculation
+  double c1 = px*px+py*py;
+  double c2 = sqrt(c1);
 
-  while(phi < -M_PI) {
-      phi += 2 * M_PI;
-  }
-  while(phi > M_PI) {
-      phi -= 2 * M_PI;
-  }
-
-  if (fabs(ro) < 0.0001) {
-    ro_dot = 0;
-  } else {
-    ro_dot = (px*vx + py*vy)/ro;
+  //check division by zero
+  if(fabs(c1) < 0.0001){
+      std::cout << "UpdateEKF () - Error - Division by Zero" << std::endl;
+      c1 = 0.000001; // very small value instead of zero!
+      c2 = sqrt(c1);
   }
 
-  VectorXd z_pred(3);
-  z_pred << ro, phi, ro_dot;
+  //compute h(x') function
+  h_x << c2,
+          atan2(py,px),
+          (px*vx + py*vy)/c2;
 
-  //adjust phi in y to be between -pi and pi
-  VectorXd y = z - z_pred;
+  VectorXd y = z - h_x;
+
+  // Update the Jacobian Matrix Hj
+  Tools tool;
+  H_ = tool.CalculateJacobian(x_);
+
+
+  // Make sure the phi value in the y vector is between -pi and pi
+  // printf ( "remainder of %f / %f is %f\n", y[1],M_PI,fmod (y[1],M_PI) );
+  y[1] = remainder (y[1],M_PI);
+
   MatrixXd Ht = H_.transpose();
   MatrixXd S = H_ * P_ * Ht + R_;
   MatrixXd Si = S.inverse();

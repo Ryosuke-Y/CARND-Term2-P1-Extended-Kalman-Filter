@@ -117,8 +117,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       float px = measurement_pack.raw_measurements_(0);
       float py = measurement_pack.raw_measurements_(1);
 
-
-
       ekf_.x_ << px, py, 0.0, 0.0;
     }
 
